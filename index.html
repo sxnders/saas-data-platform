@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Платформа данных</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  </head>
+  <body>
+    <div class="login" id="login" hidden>
+      <form class="login-card" id="login-form">
+        <h1>Вход в платформу данных</h1>
+        <label>Логин
+          <input id="login-user" autocomplete="username" required />
+        </label>
+        <label>Пароль
+          <input id="login-pass" type="password" autocomplete="current-password" required />
+        </label>
+        <div class="error" id="login-error" role="alert"></div>
+        <button class="btn primary" type="submit" id="login-btn">Войти</button>
+        <p class="note" id="login-hint" hidden></p>
+      </form>
+    </div>
+
+    <div class="app" id="app" hidden>
+      <aside class="sidebar">
+        <div class="brand">Платформа данных</div>
+        <input class="search" id="search" type="search" placeholder="Найти источник или таблицу" aria-label="Поиск" />
+        <nav class="tree" id="tree"></nav>
+        <button class="btn chat-toggle" id="chat-toggle" aria-expanded="false" aria-controls="chat">ИИ-помощник</button>
+        <button class="btn logout" id="logout">Выйти</button>
+      </aside>
+      <main class="main">
+        <header class="head">
+          <div class="crumbs" id="crumbs"></div>
+          <h1 id="title">Источники данных</h1>
+          <div class="tabs" role="tablist" id="tabs" hidden>
+            <button class="tab" role="tab" data-tab="data">Данные</button>
+            <button class="tab" role="tab" data-tab="structure">Структура</button>
+          </div>
+        </header>
+        <div class="toolbar" id="toolbar" hidden>
+          <span class="note" id="info"></span>
+          <span class="spacer"></span>
+          <button class="btn" id="dl-csv">Скачать CSV</button>
+          <button class="btn primary" id="dl-xlsx">Скачать Excel</button>
+        </div>
+        <section class="content" id="content">
+          <div class="empty">Выберите таблицу в списке слева, чтобы посмотреть её структуру и данные.</div>
+        </section>
+      </main>
+
+      <!-- Чат с ИИ-помощником: открывается справа по кнопке в сайдбаре -->
+      <aside class="chat" id="chat" aria-label="ИИ-помощник" hidden>
+        <header class="chat-head">
+          <div>
+            <strong>ИИ-помощник</strong>
+            <div class="note">Пока это макет: настоящие ответы появятся позже</div>
+          </div>
+          <div class="chat-actions">
+            <button class="btn" id="chat-clear">Очистить</button>
+            <button class="btn" id="chat-close" aria-label="Закрыть чат">✕</button>
+          </div>
+        </header>
+        <div class="chat-log" id="chat-log" aria-live="polite"></div>
+        <form class="chat-form" id="chat-form">
+          <textarea id="chat-input" rows="1" placeholder="Спросите о ваших данных" aria-label="Сообщение"></textarea>
+          <button class="btn primary" type="submit" id="chat-send">Отправить</button>
+        </form>
+      </aside>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
