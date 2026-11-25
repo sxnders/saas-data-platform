@@ -78,17 +78,6 @@ button {
 }
 
 
-.search {
-  margin: 8px 16px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text);
-  font: inherit;
-}
-
-
 .tree {
   overflow: auto;
   padding: 4px 8px 16px;
@@ -394,17 +383,14 @@ td.num {
 }
 
 
-/* ==========================================================
-   ЧАТ С ИИ-ПОМОЩНИКОМ (правая панель)
-   Открывается кнопкой «ИИ-помощник» в сайдбаре
-   ========================================================== */
 
-/* Кнопка открытия чата в сайдбаре */
+
+
 .chat-toggle {
   margin: 8px 16px 0;
 }
 
-/* Когда чат открыт, добавляется третья колонка шириной 360px */
+
 .app.chat-open {
   grid-template-columns: 280px 1fr 360px;
 }
@@ -417,12 +403,12 @@ td.num {
   min-height: 0;
 }
 
-/* Без этого правила display: flex перебило бы атрибут hidden */
+
 .chat[hidden] {
   display: none;
 }
 
-/* Шапка чата: название слева, кнопки справа */
+
 .chat-head {
   display: flex;
   justify-content: space-between;
@@ -442,7 +428,7 @@ td.num {
   gap: 6px;
 }
 
-/* Список сообщений: занимает всё место, прокручивается */
+
 .chat-log {
   flex: 1;
   overflow: auto;
@@ -452,7 +438,7 @@ td.num {
   gap: 10px;
 }
 
-/* Одно сообщение: сообщения пользователя справа, помощника слева */
+
 .msg {
   display: flex;
 }
@@ -465,8 +451,8 @@ td.num {
   max-width: 85%;
   padding: 8px 12px;
   border-radius: 12px;
-  white-space: pre-wrap;        /* сохраняет переносы строк */
-  overflow-wrap: anywhere;      /* длинные слова не ломают вёрстку */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .msg-user .msg-bubble {
@@ -481,7 +467,7 @@ td.num {
   border-bottom-left-radius: 4px;
 }
 
-/* Индикатор «помощник печатает»: три мигающие точки */
+
 .typing {
   display: flex;
   gap: 4px;
@@ -504,12 +490,12 @@ td.num {
   40% { opacity: 1; }
 }
 
-/* Если в системе отключена анимация, точки просто стоят */
+
 @media (prefers-reduced-motion: reduce) {
   .typing span { animation: none; }
 }
 
-/* Пустой чат: приглашение и кнопки-подсказки */
+
 .chat-empty {
   color: var(--muted);
   display: flex;
@@ -527,7 +513,7 @@ td.num {
   border-radius: 16px;
 }
 
-/* Поле ввода и кнопка отправки внизу */
+
 .chat-form {
   display: flex;
   gap: 8px;
@@ -548,7 +534,7 @@ td.num {
   font: inherit;
 }
 
-/* Мобильная версия: чат открывается поверх всей страницы */
+
 @media (max-width: 760px) {
   .app.chat-open {
     grid-template-columns: 1fr;

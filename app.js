@@ -32,7 +32,7 @@ const loadRows = (sid, t) => api(`/sources/${sid}/tables/${t}/rows`).catch((e) =
 
 
 const $ = (id) => document.getElementById(id);
-const state = { sources: [], open: new Set(), sel: null, tab: "data", rows: [], page: 0, sort: null, query: "" };
+const state = { sources: [], open: new Set(), sel: null, tab: "data", rows: [], page: 0, sort: null };
 const PAGE = 25;
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const isNum = (t) => /int|numeric|float|decimal/.test(t);
@@ -48,14 +48,11 @@ function currentTable() {
 
 
 function renderTree() {
-  const q = state.query.toLowerCase();
   $("tree").innerHTML = state.sources.map((s) => {
-    const tables = s.tables.filter((t) => !q || s.name.toLowerCase().includes(q) || t.name.toLowerCase().includes(q));
-    if (!tables.length) return "";
-    const open = q || state.open.has(s.id);
+    const open = state.open.has(s.id);
     return `<div class="src"><button data-src="${esc(s.id)}" aria-expanded="${!!open}">${esc(s.name)}<small>${s.tables.length}</small></button>` +
-      (open ? tables.map((t) => `<button class="tbl ${state.sel && state.sel.sid === s.id && state.sel.table === t.name ? "active" : ""}" data-sid="${esc(s.id)}" data-table="${esc(t.name)}">${esc(t.name)}</button>`).join("") : "") + "</div>";
-  }).join("") || `<div class="empty">Ничего не найдено.</div>`;
+      (open ? s.tables.map((t) => `<button class="tbl ${state.sel && state.sel.sid === s.id && state.sel.table === t.name ? "active" : ""}" data-sid="${esc(s.id)}" data-table="${esc(t.name)}">${esc(t.name)}</button>`).join("") : "") + "</div>";
+  }).join("");
 }
 
 function sortedRows() {
@@ -130,7 +127,6 @@ $("tree").addEventListener("click", (e) => {
   if (b.dataset.table) return go(b.dataset.sid, b.dataset.table, state.tab);
   const id = b.dataset.src; state.open.has(id) ? state.open.delete(id) : state.open.add(id); renderTree();
 });
-$("search").addEventListener("input", (e) => { state.query = e.target.value; renderTree(); });
 $("tabs").addEventListener("click", (e) => { const t = e.target.dataset.tab; if (t && state.sel) go(state.sel.sid, state.sel.table, t); });
 $("content").addEventListener("click", (e) => {
   const th = e.target.closest("th[data-col]"), pg = e.target.closest("[data-page]");
@@ -144,33 +140,61 @@ window.addEventListener("hashchange", () => getToken() && route());
 
 
 
-// ---------- ИИ-помощник (пока только интерфейс) ----------
-// Подсказки, которые видны в пустом чате
+
 const SUGGESTIONS = [
   "Какие источники подключены?",
   "Опиши структуру выбранной таблицы",
   "С чего мне начать?",
 ];
 
-// Состояние чата. Хранится только в памяти: после обновления страницы чат пустой.
-// role: "user" (сообщение пользователя) или "bot" (ответ помощника)
+
 const chat = { messages: [], busy: false, session: 0 };
 
-// ЗАГЛУШКА. Когда появится бэкенд, замените тело функции на запрос, например:
-//   const r = await fetch(API + "/assistant", {
-//     method: "POST",
-//     headers: { "Content-Type": "application/json", Authorization: "Bearer " + getToken() },
-//     body: JSON.stringify({ messages, context: state.sel }),   // state.sel = выбранная таблица
-//   });
-//   return (await r.json()).reply;
+
 async function askAssistant(messages) {
-  await new Promise((resolve) => setTimeout(resolve, 900));
-  return "Это макет: ИИ-помощник ещё не подключён, поэтому настоящего ответа пока нет.";
+  const current = currentTable();
+  const context = current
+    ? {
+        source: current.source.name,
+        table: current.table.name,
+        columns: current.table.columns,
+        totalRows: state.rows.length,
+        rows: state.rows.slice(0, 100),
+      }
+    : {
+        sources: state.sources.map((source) => ({
+          name: source.name,
+          tables: source.tables.map((table) => table.name),
+        })),
+      };
+
+  const response = await fetch(`${API}/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+    },
+    body: JSON.stringify({
+      messages: messages.map((message) => ({
+        role: message.role === "bot" ? "model" : "user",
+        text: message.text,
+      })),
+      context,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || `Ошибка сервера: ${response.status}`);
+  }
+
+  return data.answer;
 }
 
 const div = (cls) => Object.assign(document.createElement("div"), { className: cls });
 
-// Перерисовывает список сообщений
+
 function renderChat() {
   const log = $("chat-log");
   log.replaceChildren();
@@ -188,12 +212,12 @@ function renderChat() {
 
   chat.messages.forEach((m) => {
     const row = div("msg msg-" + m.role), bubble = div("msg-bubble");
-    bubble.textContent = m.text;   // textContent: текст не может превратиться в HTML
+    bubble.textContent = m.text;
     row.append(bubble);
     log.append(row);
   });
 
-  if (chat.busy) {   // индикатор «помощник печатает»
+  if (chat.busy) {
     const row = div("msg msg-bot"), dots = div("msg-bubble typing");
     dots.setAttribute("aria-label", "Помощник печатает");
     dots.innerHTML = "<span></span><span></span><span></span>";
@@ -201,11 +225,11 @@ function renderChat() {
     log.append(row);
   }
 
-  log.scrollTop = log.scrollHeight;   // прокрутка к последнему сообщению
+  log.scrollTop = log.scrollHeight;
   $("chat-send").disabled = chat.busy;
 }
 
-// Отправляет сообщение и добавляет ответ помощника
+
 async function sendMessage(text) {
   text = text.trim();
   if (!text || chat.busy) return;
@@ -218,13 +242,13 @@ async function sendMessage(text) {
   try { reply = await askAssistant(chat.messages); }
   catch { reply = "Не удалось получить ответ. Попробуйте ещё раз."; }
 
-  if (session !== chat.session) return;   // чат очистили или вышли из аккаунта, пока шёл ответ
+  if (session !== chat.session) return;
   chat.messages.push({ role: "bot", text: reply });
   chat.busy = false;
   renderChat();
 }
 
-// Открывает или закрывает панель чата
+
 function setChat(open) {
   $("chat").hidden = !open;
   $("app").classList.toggle("chat-open", open);
@@ -232,7 +256,7 @@ function setChat(open) {
   if (open) { renderChat(); $("chat-input").focus(); }
 }
 
-// Очищает переписку (кнопка «Очистить» и выход из аккаунта)
+
 function resetChat() {
   chat.messages = [];
   chat.busy = false;
@@ -251,16 +275,16 @@ $("chat-form").addEventListener("submit", (e) => {
   input.value = "";
   input.style.height = "auto";
 });
-// Enter отправляет сообщение, Shift+Enter переносит строку
+
 $("chat-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("chat-form").requestSubmit(); }
 });
-// Поле ввода растёт вместе с текстом (до 120px)
+
 $("chat-input").addEventListener("input", (e) => {
   e.target.style.height = "auto";
   e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
 });
-// Клик по подсказке в пустом чате отправляет её как вопрос
+
 $("chat-log").addEventListener("click", (e) => {
   const b = e.target.closest("[data-prompt]");
   if (b) sendMessage(b.dataset.prompt);
@@ -297,8 +321,7 @@ async function login(username, password) {
 }
 function logout() {
   localStorage.removeItem(TOKEN_KEY);
-  Object.assign(state, { sources: [], sel: null, rows: [], open: new Set(), query: "" });
-  $("search").value = "";
+  Object.assign(state, { sources: [], sel: null, rows: [], open: new Set() });
   resetChat(); setChat(false);
   history.replaceState(null, "", location.pathname);
   renderTree(); renderMain();

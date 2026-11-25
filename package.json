@@ -1,0 +1,13 @@
+{
+  "name": "saas-data-platform-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "dotenv": "^16.0.0",
+    "express": "^5.0.0"
+  }
+}
